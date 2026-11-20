@@ -89,7 +89,7 @@ CHATAI_TIMEOUT = float(os.getenv("IR_CHATAI_TIMEOUT", "60") or 60)
 #    定值** —— 与 IMAP 同一个约定，由 `mailbox.chatai_state_path()` 在调用时读。
 
 # ── Remail 接码平台（MAILBOX_KIND=remail 时必填 API Key）──────────
-# 平台：https://remail.aishop6.com 。按**订单**买邮箱，取件走 `/v1/pickup`。
+# 平台：https://remail.best 。按**订单**买邮箱，取件走 `/v1/pickup`。
 # 🔴 权威文档是 `/openapi.json`（OpenAPI 3.0.3）—— `/docs` 只是 814 B 的
 #    SPA 空壳，抓它会以为站点没文档（2026-09-24 踩过）。
 # **凭据不进仓库**，默认空、由 `validate()` 在入口报错。
@@ -109,7 +109,7 @@ REMAIL_SUPPLY = os.getenv("IR_REMAIL_SUPPLY", "private_first").strip() or "priva
 # 用 purchase —— 我们要的是能收激活邮件的长效地址。
 REMAIL_SERVICE_MODE = os.getenv("IR_REMAIL_SERVICE_MODE", "purchase").strip() or "purchase"
 # 平台地址。公开服务、不含凭据，所以给默认值。
-REMAIL_BASE = os.getenv("IR_REMAIL_BASE", "").strip() or "https://remail.aishop6.com"
+REMAIL_BASE = os.getenv("IR_REMAIL_BASE", "").strip() or "https://remail.best"
 # 单次 API 请求超时（秒）。
 REMAIL_TIMEOUT = float(os.getenv("IR_REMAIL_TIMEOUT", "60") or 60)
 
