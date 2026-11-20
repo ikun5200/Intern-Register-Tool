@@ -12,7 +12,10 @@
   **默认不填 = 写进台账目录** `ledger/`：
       ledger/runs/<日期>/results-<时间戳>.json   ← 合并后的**全量**快照（= 读源）
       ledger/latest.json                         ← **本批结果**（含失败 / 跳过）
-  显式 `--out X` 才是老行为（只写 X、不落快照）。改布局的原因见
+      ledger/runs/<日期>/accounts-<时间戳>.txt   ← 本批**成功**账号，一行一个
+      ledger/runs/<日期>/keys-<时间戳>.txt       ← 本批**成功** API Key，一行一个
+      ledger/latest_accounts.txt / latest_keys.txt  ← 上面两个 TXT 的本批最新版
+  显式 `--out X` 才是老行为（只写 X、不落快照，也不生成 TXT）。改布局的原因见
   `src/ledger.py` 的模块 docstring —— 老布局把"历史全量"和"本次结果"挤在
   仓库根的同一个 `results.json` 里，复盘时只能靠 `.bak-*` 的时间戳猜。
 
@@ -86,8 +89,10 @@ def main():
         default=None,
         help="结果输出文件。**不填（默认）= 写进台账目录**："
         "ledger/runs/<日期>/results-<时间戳>.json（合并后的全量快照，"
-        "也是台账读源）+ ledger/latest.json（本批结果）。"
-        "显式给路径则只写那一个文件、不落快照。",
+        "也是台账读源）+ ledger/latest.json（本批结果），"
+        "并在同目录生成 accounts-<时间戳>.txt / keys-<时间戳>.txt "
+        "（本批成功账号与 API Key，一行一个）。"
+        "显式给路径则只写那一个 JSON 文件、不落快照、不生成 TXT。",
     )
     ap.add_argument(
         "--overwrite",
@@ -256,12 +261,19 @@ def main():
             snap, last = _ledger.save_snapshot(
                 merged, new_records, existing=[] if args.overwrite else None
             )
+            acc_txt, key_txt, latest_acc, latest_key, ok_n = _ledger.save_txt(
+                snap, new_records
+            )
             written = snap
             print(
                 f"\n台账已落盘：\n"
                 f"  快照（读源） {snap.relative_to(_ledger.ROOT)}\n"
                 f"  本批结果     {last.relative_to(_ledger.ROOT)}"
-                f"（{len(new_records)} 条）"
+                f"（{len(new_records)} 条）\n"
+                f"  账号清单     {acc_txt.relative_to(_ledger.ROOT)}（{ok_n} 条）\n"
+                f"  API Key 清单 {key_txt.relative_to(_ledger.ROOT)}（{ok_n} 条）\n"
+                f"  最新账号     {latest_acc.relative_to(_ledger.ROOT)}\n"
+                f"  最新 Key     {latest_key.relative_to(_ledger.ROOT)}"
             )
         else:
             written = _ledger.save(out, merged, existing=[] if args.overwrite else None)

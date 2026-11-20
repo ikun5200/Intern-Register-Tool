@@ -147,19 +147,18 @@ DISCOVERY_API = f"{DISCOVERY_BASE}/api"
 #    真正接受 sk- key 的是下面这个主机，路径前缀 /v1（OpenAI 兼容）。
 CHAT_API_BASE = os.getenv("IR_CHAT_API_BASE", "https://discovery-api.intern-ai.org.cn/v1")
 
-# TokenPlan 可用模型（2026-09-15 实测，来自 GET /v1/models）
-# ⚠ intern-s1 不在其中，用它会得到 model_not_available
+# TokenPlan 可用模型（2026-11-20 实测，来自 GET /v1/models）
+# 🔴 原首选 `deepseek-v4-flash-0731` 已于 2026-11-13 下线，用它会 404；
+#    可用清单随账号/套餐变化，真正权威的是 `apikey.list_models()` 的返回。
 CHAT_MODELS = [
-    "deepseek-v4-flash-0731",
-    "minimax-m3",
-    "deepseek-v4-flash-vision",
-    "qwen3.8-27b",
-    "intern-s2",
-    "deepseek-v4-pro-0813",
+    "deepseek-v4.1-flash-1017",
     "Agents-A1",
     "Atria-Dawn-Preview",
     "glm-5.3",
-    "kimi-k2.6",
+    "intern-s2",
+    "qwen3.8-27b",
+    "kimi-k3.1-pro",
+    "Sage-S2.1-Flash",
 ]
 
 # ── 活动邀请信息：已删除（2026-09-19 安全重构）──────────────────────

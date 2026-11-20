@@ -29,9 +29,10 @@ class ChatResult:
     usage: dict = field(default_factory=dict)
     error: str = ""
     # 🔴 `ok=True` 只代表"网关接受了并给了 choices"，**不代表正文非空**。
-    # 本项目实测（2026-09-16）：`deepseek-v4-flash-0731` 是**带 reasoning 的模型**，
-    # 响应里除了 `content` 还有 `reasoning_content`。`max_tokens=32` 时
-    # `reasoning_tokens` 就吃了 34 → `content` 空、`finish_reason="length"`。
+    # 本项目实测（2026-09-16，当时默认模型 `deepseek-v4-flash-0731`，已于
+    # 2026-11-13 下线）：它是**带 reasoning 的模型**，响应里除了 `content`
+    # 还有 `reasoning_content`。`max_tokens=32` 时 `reasoning_tokens` 就吃了
+    # 34 → `content` 空、`finish_reason="length"`。
     # 只看 `ok` 会把这种情况当成"模型没说话"；有 finish_reason 才能分辨
     # "被截断"和"真的没内容"。
     finish_reason: str = ""

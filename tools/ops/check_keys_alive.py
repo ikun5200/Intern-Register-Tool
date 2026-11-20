@@ -122,11 +122,11 @@ def probe_models(
 def probe_chat(key: str, model: str | None = None) -> tuple:
     """真发一次推理 —— 唯一能证明"真能用"的判据。
 
-    🔴 `max_tokens` 不能给太小：本项目实测（2026-09-16）默认模型
-    `deepseek-v4-flash-0731` 是**带 reasoning 的模型**，`max_tokens=32` 时
-    `reasoning_tokens=34` 就把预算吃光了 → 返回 200 但 `content` 为空、
-    `finish_reason="length"`。旧版这里用 32，会把一把**好 key** 报成
-    "推理没输出"。现在给 128，并显式区分"被截断"和"真失败"。
+    🔴 `max_tokens` 不能给太小：本项目实测（2026-09-16，当时默认模型
+    `deepseek-v4-flash-0731`，已于 2026-11-13 下线）它是**带 reasoning 的模型**，
+    `max_tokens=32` 时 `reasoning_tokens=34` 就把预算吃光了 → 返回 200 但
+    `content` 为空、`finish_reason="length"`。旧版这里用 32，会把一把**好 key**
+    报成"推理没输出"。现在给 128，并显式区分"被截断"和"真失败"。
     """
     from src import apikey as _ak
 

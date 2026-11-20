@@ -378,8 +378,26 @@ tools/                 脚本按职责分 4 个子目录。**不是 Python 包**
 ```
 ledger/runs/2026-09-20/results-20260920-061230.json   ← 读源（**合并后的全量**）
 ledger/runs/2026-09-20/results-20260920-055527.json   ← 上一份快照（回滚点）
+ledger/runs/2026-09-20/accounts-20260920-061230.txt   ← 本批成功账号（一行一个）
+ledger/runs/2026-09-20/keys-20260920-061230.txt       ← 本批成功 API Key（一行一个）
 ledger/latest.json                                    ← **本批结果**（含失败 / 跳过）
+ledger/latest_accounts.txt / latest_keys.txt          ← 上面两个 TXT 的本批最新版
 ```
+
+### 面向人的两个 TXT
+
+默认落盘（不传 `--out`）时，除了 JSON 台账，还会在**同一日期目录、同一时间戳**
+下生成两个 TXT：
+
+| 文件 | 每行内容 |
+|---|---|
+| `accounts-<时间戳>.txt` | `email----password----username----sso_uid----api_key` |
+| `keys-<时间戳>.txt` | 只有 `api_key` |
+
+- **只写成功拿到 API Key 的账号**；失败 / 跳过的账号不写。
+- `ledger/latest_accounts.txt` / `latest_keys.txt` 是**本批**最新版（会被下一次运行覆盖）。
+- JSON 仍是程序内部台账和读源；TXT 只是给人看 / 直接拿去用的导出物。
+- `--out X` 显式给路径时只写那个 JSON，**不生成 TXT**。
 
 两个文件职责**不同**，混用是这块最容易踩的坑：
 

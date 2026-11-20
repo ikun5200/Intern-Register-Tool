@@ -64,6 +64,12 @@ RUNS_DIRNAME = "runs"
 SNAPSHOT_STEM = "results"
 # **本批结果**的文件名。⚠ 它不是台账、**不能当读源**（见模块 docstring）。
 LAST_RUN_NAME = "latest.json"
+# 面向人的两个 TXT（2026-11-20 加）：与快照同目录、同时间戳，一行一个成功账号。
+# JSON 仍是程序内部台账；TXT 只是给人看/直接拿去用的导出物。
+TXT_ACCOUNTS_STEM = "accounts"
+TXT_KEYS_STEM = "keys"
+LATEST_ACCOUNTS_NAME = "latest_accounts.txt"
+LATEST_KEYS_NAME = "latest_keys.txt"
 
 # 快照文件名的**严格**形状：`results-YYYYMMDD-HHMMSS.json`。
 # 🔴 用正则筛，不用 `glob("*.json")`：`runs/` 是个人工可写的目录，一个
@@ -523,3 +529,65 @@ def save_snapshot(
     last = last_run_path()
     _atomic_write(last, merged if batch is None else batch)
     return snap, last
+
+
+# ────────────────────────────────────────────────────────────────
+# 面向人的 TXT 导出（2026-11-20 加）
+# ────────────────────────────────────────────────────────────────
+def _txt_field(value) -> str:
+    """把字段压成单行 —— 账号文件是"一行一个账号"，换行会把行拆坏。"""
+    return str(value or "").replace("\r", " ").replace("\n", " ").strip()
+
+
+def _txt_lines(lines: list[str]) -> str:
+    """一行一个 + 末尾换行；空列表写空文件（不是省略文件）。"""
+    return "".join(f"{line}\n" for line in lines)
+
+
+def save_txt(snapshot, batch: list[dict], *, ledger_dir=None) -> tuple:
+    """在快照旁边写两个 TXT，并刷新 `ledger/latest_*.txt`。
+
+    格式（用户 2026-11-20 定）：
+
+        accounts-<时间戳>.txt   email----password----username----sso_uid----api_key
+        keys-<时间戳>.txt       只有 api_key（一行一个）
+
+    * 只写**成功拿到 API Key** 的记录（`api_key` 非空）；失败/跳过不写。
+    * 时间戳直接取自快照文件名，保证 JSON / TXT 是同一批。
+    * 两个 TXT 都走 `fsutil.atomic_write_text`，不会留半截文件。
+    * `latest_*.txt` 是**本批**，不是累计 —— 与 `latest.json` 的语义一致。
+
+    返回 `(账号 TXT, Key TXT, latest 账号 TXT, latest Key TXT, 成功条数)`。
+    """
+    snap = Path(snapshot)
+    m = SNAPSHOT_RE.match(snap.name)
+    if m:
+        ts = f"{m.group(1)}-{m.group(2)}"
+    else:
+        # 理论上不会走到：调用方总是传 save_snapshot() 的返回值。
+        # 真走到这里也照写，但不能假装知道批次时间 —— 用当前时间兜底。
+        ts = time.strftime("%Y%m%d-%H%M%S")
+
+    ok = [r for r in (batch or []) if str(r.get("api_key") or "").strip()]
+    account_lines = [
+        "----".join(
+            _txt_field(r.get(k))
+            for k in ("email", "password", "username", "sso_uid", "api_key")
+        )
+        for r in ok
+    ]
+    key_lines = [_txt_field(r.get("api_key")) for r in ok]
+
+    acc_path = snap.with_name(f"{TXT_ACCOUNTS_STEM}-{ts}.txt")
+    key_path = snap.with_name(f"{TXT_KEYS_STEM}-{ts}.txt")
+    acc_text = _txt_lines(account_lines)
+    key_text = _txt_lines(key_lines)
+    fsutil.atomic_write_text(acc_path, acc_text)
+    fsutil.atomic_write_text(key_path, key_text)
+
+    latest_dir = Path(ledger_dir) if ledger_dir is not None else LEDGER_DIR
+    latest_acc = latest_dir / LATEST_ACCOUNTS_NAME
+    latest_key = latest_dir / LATEST_KEYS_NAME
+    fsutil.atomic_write_text(latest_acc, acc_text)
+    fsutil.atomic_write_text(latest_key, key_text)
+    return acc_path, key_path, latest_acc, latest_key, len(ok)

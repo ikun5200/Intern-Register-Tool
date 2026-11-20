@@ -50,15 +50,20 @@ def _step_open_form(page, st: _AttemptState, settings: BrowserSettings):
         st.mark("prewarm")
 
     # 1) 切到账号登录。
-    #    自适应等待元素可点，替代原先固定的 2.5~4.2s —— 快且更稳
-    #    （慢机器上固定 sleep 反而不够）。
+    #    2026-11-20 实测：登录页已改版 —— `/login` 会先跳到 `/wechat`，
+    #    直接展示「验证码登录 / 微信登录 / 密码登录」三个 tab，旧的
+    #    「使用手机号 / 密码登录」入口已不存在。所以先等新 tab；
+    #    等不到再走旧入口（保留对旧版页面的兼容）。
+    tab = page.get_by_text("密码登录", exact=True).first
     entry = page.get_by_text("使用手机号 / 密码登录", exact=False).first
-    entry.wait_for(state="visible", timeout=UI_WAIT_MS)
-    entry.click(timeout=8000)
+    try:
+        tab.wait_for(state="visible", timeout=5000)
+    except Exception:
+        entry.wait_for(state="visible", timeout=UI_WAIT_MS)
+        entry.click(timeout=8000)
+        tab.wait_for(state="visible", timeout=UI_WAIT_MS)
 
     # 2) 切到密码登录 tab，等输入框真正就绪
-    tab = page.get_by_text("密码登录", exact=True).first
-    tab.wait_for(state="visible", timeout=UI_WAIT_MS)
     tab.click(timeout=8000)
     acc_box = page.locator("#normal_login_account")
     acc_box.wait_for(state="visible", timeout=UI_WAIT_MS)
@@ -107,7 +112,10 @@ def _step_warmup(page, st: _AttemptState, vw: int, vh: int) -> tuple:
 def _step_submit(page, st: _AttemptState) -> None:
     """点登录按钮。"""
     # 6) 提交
-    page.locator("button").filter(has_text="登录").first.click(timeout=10000)
+    #    2026-11-20 实测：登录页改版后 tab 也是 <button>，原来的
+    #    `filter(has_text="登录")` 会先命中「验证码登录」tab，把页面切回
+    #    短信验证码表单。这里必须**精确匹配**提交按钮的文案。
+    page.get_by_role("button", name="登录", exact=True).first.click(timeout=10000)
     st.ev("submit")
 
 
